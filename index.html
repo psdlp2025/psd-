@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电力安全风险分级管控清单（487项）</title>
+    <style>
+        /* 专业级表格样式 */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 20px;
+            background: #f0f3f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+        #searchBox {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #searchInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            min-width: 150px;
+        }
+        th {
+            background: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e9f5ff;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>安全风险分级管控清单（共487项）</h1>
+        
+        <!-- 搜索框 -->
+        <div id="searchBox">
+            <input type="text" id="searchInput" placeholder="输入风险编码、描述或责任部门...">
+            <button onclick="searchData()">搜索</button>
+            <button onclick="resetData()">重置</button>
+        </div>
+
+        <!-- 数据表格 -->
+        <table id="riskTable">
+            <thead>
+                <tr>
+                    <th onclick="sortData('风险编码')">风险编码 ▼</th>
+                    <th onclick="sortData('风险类别')">风险类别 ▼</th>
+                    <th onclick="sortData('风险点描述')">风险点描述 ▼</th>
+                    <th onclick="sortData('设备类型')">设备类型 ▼</th>
+                    <th onclick="sortData('技术参数')">技术参数 ▼</th>
+                    <th onclick="sortData('D值')">D值 ▼</th>
+                    <th onclick="sortData('管控等级')">管控等级 ▼</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- 数据由JavaScript动态加载 -->
+            </tbody>
+        </table>
+
+        <!-- 分页控件 -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        let fullData = []; // 存储完整数据
+        let filteredData = []; // 存储筛选后的数据
+        let currentPage = 1; // 当前页码
+        const pageSize = 50; // 每页显示条数
+
+        // 加载数据
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                fullData = data;
+                filteredData = [...fullData];
+                renderTable();
+                renderPagination();
+            });
+
+        // 渲染表格
+        function renderTable() {
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filteredData.slice(start, end);
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = pageData.map(item => `
+                <tr>
+                    <td>${item.风险编码}</td>
+                    <td>${item.风险类别}</td>
+                    <td>${item.风险点描述}</td>
+                    <td>${item.设备类型}</td>
+                    <td>${item.技术参数}</td>
+                    <td>${item.D值}</td>
+                    <td><span class="level-tag">${item.管控等级}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // 分页渲染
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            let paginationHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+            document.getElementById('pagination').innerHTML = paginationHTML;
+        }
+
+        // 分页切换
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+            renderPagination();
+        }
+
+        // 搜索功能
+        function searchData() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            filteredData = fullData.filter(item =>
+                item.风险编码.toLowerCase().includes(keyword) ||
+                item.风险点描述.toLowerCase().includes(keyword) ||
+                item.责任部门.toLowerCase().includes(keyword)
+            );
+            currentPage = 1;
+            renderTable();
+            renderPagination();
+        }
+
+        // 重置功能
+        function resetData() {
+            document.getElementById('searchInput').value = '';
+            filteredData = [...fullData];
+            currentPage = 1;
+            renderTable();
+            renderPagination();
+        }
+
+        // 排序功能
+        let sortStates = {};
+        function sortData(field) {
+            sortStates[field] = !sortStates[field];
+            filteredData.sort((a, b) => {
+                const valA = a[field];
+                const valB = b[field];
+                return sortStates[field] ? 
+                    (valA > valB ? 1 : -1) : 
+                    (valA < valB ? 1 : -1);
+            });
+            renderTable();
+        }
+    </script>
+</body>
+</html>
